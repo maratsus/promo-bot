@@ -35,29 +35,29 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# ========== 3. КЛАВИАТУРЫ ==========
+# # ========== КЛАВИАТУРЫ (ИСПРАВЛЕНО) ==========
+
 def main_menu():
     buttons = [
-        [InlineKeyboardButton(text="🛴 Whoosh", callback_data="service_whoosh")],
-        [InlineKeyboardButton(text="🛴 Юрент", callback_data="service_urent")],
-        [InlineKeyboardButton(text="🛴 Яндекс Самокат", callback_data="service_yandex_scooter")],
-        [InlineKeyboardButton(text="🚖 Яндекс Такси", callback_data="service_yandex_taxi")],
-        [InlineKeyboardButton(text="🎁 ПОЛУЧИТЬ БЕСПЛАТНО", callback_data="free_promo")],
-        [InlineKeyboardButton(text="📞 Поддержка", callback_data="support")],
+        [InlineKeyboardButton(text=" Whoosh", callback_data="service_whoosh")],
+        [InlineKeyboardButton(text=" Юрент", callback_data="service_urent")],
+        [InlineKeyboardButton(text=" Яндекс Самокат", callback_data="service_yandex_scooter")],
+        [InlineKeyboardButton(text=" Яндекс Такси", callback_data="service_yandex_taxi")],
+        [InlineKeyboardButton(text="🎁 ПОЛУЧИТЬ БЕСПЛАТНО", callback_data="free_promo")], # Кнопка теперь тут!
+        [InlineKeyboardButton(text=" Поддержка", callback_data="support")],
         [InlineKeyboardButton(text="🔐 Админ панель", callback_data="admin_panel")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def products_menu(service):
     buttons = []
+    # Фильтруем товары по выбранному сервису
     for key, p in PRODUCTS.items():
         if p["service"].lower() == service.lower():
             buttons.append([InlineKeyboardButton(text=f"{p['name']} — {p['price']} USDT", callback_data=f"buy_{key}")])
+    
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="back_main")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-def back_button():
-    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="◀️ Назад", callback_data="back_main")]])
 
 # ========== 4. ПЛАТЕЖИ ==========
 async def create_crypto_invoice(amount_usdt, product_key, user_id):
@@ -111,13 +111,15 @@ async def support_handler(callback: CallbackQuery):
 async def free_promo_handler(callback: CallbackQuery):
     text = (
         "🔥 *АКЦИЯ: КАТАЙСЯ ЗА ОТЗЫВЫ В TIKTOK!*\n\n"
-        "1️⃣ Оставь коммент: «Лучший бот с промокодами 👉 @whoosho_bot» под видео в ТТ.\n"
-        "2️⃣ Сделай скриншоты (нужно 35 штук).\n"
-        f"3️⃣ Скидывай сюда — {SUPPORT_CONTACT}\n\n"
-        "🎁 *Награда:* 1 любой промокод бесплатно!"
+        "Мы раздаем бесплатные промокоды за актив в ТТ! Всё просто:\n\n"
+        "1️⃣ Найди любое видео про самокаты или такси в TikTok.\n"
+        "2️⃣ Оставь комментарий: «Лучший бот с промокодами 👉 @whoosho_bot».\n"
+        "3️⃣ Сделай скриншоты своих комментариев.\n\n"
+        "💰 *Условие:* Собери **35 скриншотов** с разных видео.\n"
+        f"📩 *Куда скидывать:* Скрины отправляй сюда — {SUPPORT_CONTACT}\n\n"
+        "🎁 *Награда:* После проверки ты получишь **1 любой промокод** на выбор бесплатно!"
     )
     await callback.message.edit_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=back_button())
-
 @dp.callback_query(F.data == "admin_panel")
 async def admin_handler(callback: CallbackQuery):
     if callback.from_user.id != ADMIN_ID:
