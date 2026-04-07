@@ -64,16 +64,23 @@ def products_menu(service):
 def back_button():
     return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="◀️ Назад", callback_data="back_main")]])
 
-# ========== ПЛАТЕЖИ ==========
+# ========== ПЛАТЕЖИ (ИСПРАВЛЕНО) ==========
 async def create_crypto_invoice(amount_usdt, product_key, user_id):
     url = "https://pay.crypt.bot/api/createInvoice"
     headers = {"Crypto-Pay-API-Token": CRYPTOBOT_TOKEN}
+    
+    # Ссылка на твоего бота, чтобы кнопка в чеке вела обратно
+    bot_url = "https://t.me/whoosho_bot" 
+
     payload = {
-        "asset": "USDT", "amount": str(amount_usdt),
+        "asset": "USDT", 
+        "amount": str(amount_usdt),
         "description": PRODUCTS[product_key]["name"],
-        "paid_btn_name": "callback",
+        "paid_btn_name": "viewItem",      # ИЗМЕНЕНО: так надежнее для возврата
+        "paid_btn_url": bot_url,          # ОБЯЗАТЕЛЬНО: исправляет ошибку 400
         "payload": json.dumps({"product": product_key, "user_id": user_id})
     }
+    
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(url, headers=headers, json=payload) as resp:
@@ -87,6 +94,7 @@ async def create_crypto_invoice(amount_usdt, product_key, user_id):
             return None, None
 
 async def check_invoice_status(invoice_id):
+    # Тут оставь старую функцию check_invoice_status без изменений
     url = "https://pay.crypt.bot/api/getInvoices"
     headers = {"Crypto-Pay-API-Token": CRYPTOBOT_TOKEN}
     async with aiohttp.ClientSession() as session:
