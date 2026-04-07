@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQu
 from aiogram.enums import ParseMode
 
 # ========== КОНФИГУРАЦИЯ ==========
-BOT_TOKEN = "8687270310:AAE3zpVz2QWDvFCEYHmXhPE2XOUCkkFVyIw"
+BOT_TOKEN = "8687270310:AAG6jmf9yjf0iy5L56xuIgXPokQ7-AiufzI"
 CRYPTOBOT_TOKEN = "563565:AAYHI6yh4ZskQJHMGEVLVuDUk4H6FhvuYrb"
 ADMIN_ID = 6606706488
 SUPPORT_CONTACT = "@hdhdjdjggdr"
