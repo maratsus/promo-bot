@@ -8,10 +8,8 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQu
 from aiogram.enums import ParseMode
 
 # ========== КОНФИГУРАЦИЯ ==========
-BOT_TOKEN = "8687270310:AAE3zpVz2QWDvFCEYHmXhPE2XOUCkkFVyIw
-"
-CRYPTOBOT_TOKEN = "563565:AAYHI6yh4ZskQJHMGEVLVuDUk4H6FhvuYrb
-"  # Получить у @CryptoBot → /token
+BOT_TOKEN = "8687270310:AAE3zpVz2QWDvFCEYHmXhPE2XOUCkkFVyIw"
+CRYPTOBOT_TOKEN = "563565:AAYHI6yh4ZskQJHMGEVLVuDUk4H6FhvuYrb"  # Получить у @CryptoBot → /token
 ADMIN_ID = 6606706488  # Ваш Telegram ID
 
 # Товары: название → цена в USDT (можно дробные, например 3.9)
