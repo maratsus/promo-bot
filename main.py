@@ -10,36 +10,62 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQu
 from aiogram.enums import ParseMode
 from aiohttp import web
 
-# ========== КОНФИГУРАЦИЯ ==========
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-CRYPTOBOT_TOKEN = os.getenv("CRYPTOBOT_TOKEN")
+# ========== КОНФИГУРАЦИЯ (ОБНОВЛЕНО) ==========
 ADMIN_ID = 6606706488
 SUPPORT_CONTACT = "@hdhdjdjggdr"
 
-# Товары
-PRODUCTS = {
-    "urent_6":      {"name": "Юрент | 6 поездок",      "price": 3.90,  "service": "Юрент", "code": "URENT6-ABCD"},
-    "urent_10":     {"name": "Юрент | 10 поездок",     "price": 4.70,  "service": "Юрент", "code": "URENT10-1234"},
-    "urent_week":   {"name": "Юрент | Недельная",      "price": 5.00,  "service": "Юрент", "code": "URENTWEEK-A1B2"},
-    "urent_2weeks": {"name": "Юрент | 2 недели",       "price": 6.80,  "service": "Юрент", "code": "URENT2W-XYZZ"},
-    
-    "whoosh_6":     {"name": "Whoosh | 6 поездок",     "price": 3.90,  "service": "Whoosh", "code": "WHOOSH6-QWER"},
-    "whoosh_10":    {"name": "Whoosh | 10 поездок",    "price": 4.70,  "service": "Whoosh", "code": "WHOOSH10-ASDF"},
-    
-    "yandex_scooter_6":   {"name": "Яндекс Самокат | 6 поездок",  "price": 1.95,  "service": "Яндекс Самокат", "code": "YNDXSC6-ABCD"},
-    "yandex_scooter_10":  {"name": "Яндекс Самокат | 10 поездок", "price": 2.35,  "service": "Яндекс Самокат", "code": "YNDXSC10-EFGH"},
-    "yandex_scooter_week": {"name": "Яндекс Самокат | Недельная", "price": 2.50,  "service": "Яндекс Самокат", "code": "YNDXSCWK-1234"},
-    
-    "yandex_taxi_3":  {"name": "Яндекс Такси | 3 бесплатные поездки", "price": 5.00, "service": "Яндекс Такси", "code": "YNDXTAXI-3FREE"},
-}
+# ========== КЛАВИАТУРА МЕНЮ ==========
+def main_menu():
+    buttons = [
+        [InlineKeyboardButton(text="🛴 Whoosh", callback_data="service_whoosh")],
+        [InlineKeyboardButton(text="🛴 Юрент", callback_data="service_urent")],
+        [InlineKeyboardButton(text="🛴 Яндекс Самокат", callback_data="service_yandex_scooter")],
+        [InlineKeyboardButton(text="🚖 Яндекс Такси", callback_data="service_yandex_taxi")],
+        [InlineKeyboardButton(text="🎁 ПОЛУЧИТЬ БЕСПЛАТНО", callback_data="free_promo")],
+        [InlineKeyboardButton(text="📞 Поддержка", callback_data="support")],
+        [InlineKeyboardButton(text="🔐 Админ панель", callback_data="admin_panel")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-user_data = {}
-users_db = {}
-payments_db = []
+# ========== НОВЫЕ ОБРАБОТЧИКИ ==========
 
-logging.basicConfig(level=logging.INFO)
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher()
+@dp.callback_query(F.data == "support")
+async def support_handler(callback: CallbackQuery):
+    text = (
+        "🆘 *Служба поддержки*\n\n"
+        f"Возникли вопросы? Пишите нашему менеджеру: {SUPPORT_CONTACT}\n"
+        "Поможем с оплатой или заменой товара в течение 15-30 минут."
+    )
+    await callback.message.edit_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=back_button())
+
+@dp.callback_query(F.data == "free_promo")
+async def free_promo_handler(callback: CallbackQuery):
+    text = (
+        "🔥 *АКЦИЯ: КАТАЙСЯ ЗА ОТЗЫВЫ В TIKTOK!*\n\n"
+        "Мы раздаем бесплатные промокоды за актив в ТТ! Всё просто:\n\n"
+        "1️⃣ Найди видео про самокаты или такси в TikTok.\n"
+        "2️⃣ Оставь комментарий: «Лучший бот с промокодами 👉 @whoosho_bot» (или похожий по смыслу).\n"
+        "3️⃣ Сделай скриншот каждого своего комментария.\n\n"
+        "💰 *Условие:* Собери **35 скриншотов** с разных видео.\n"
+        f"📩 *Куда скидывать:* Скрины отправляй сюда — {SUPPORT_CONTACT}\n\n"
+        "🎁 *Награда:* После проверки ты получишь **1 любой промокод** на выбор бесплатно!"
+    )
+    await callback.message.edit_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=back_button())
+
+@dp.callback_query(F.data == "admin_panel")
+async def admin_handler(callback: CallbackQuery):
+    # Проверка на твой ID
+    if callback.from_user.id != ADMIN_ID:
+        await callback.answer("❌ Доступ только для владельца!", show_alert=True)
+        return
+    
+    text = (
+        "🔐 *ADMIN PANEL*\n\n"
+        f"Юзеров в базе: {len(users_db)}\n"
+        "Статус системы: Работает штатно ✅"
+    )
+    await callback.message.edit_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=back_button())
+
 
 # ========== КЛАВИАТУРЫ ==========
 def main_menu():
@@ -104,66 +130,90 @@ async def check_invoice_status(invoice_id):
                 return data["result"]["items"][0]["status"]
     return "unknown"
 
-# ========== ОБРАБОТЧИКИ ==========
+# ========== ОБРАБОТЧИКИ (ФИНАЛ) ==========
+
 @dp.message(Command("start"))
 async def start(message: Message):
     uid = message.from_user.id
+    # Сохраняем пользователя в базу (в памяти)
     if uid not in users_db:
-        users_db[uid] = {"username": message.from_user.username, "date": datetime.now()}
-    await message.answer("🏪 *Магазин промокодов*\nВыберите сервис:", parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu())
+        users_db[uid] = {
+            "username": message.from_user.username or "Unknown",
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+        }
+    await message.answer(
+        "🏪 *WhooshShop | ЮрентShop | ЯндексShop*\n\nВыберите компанию 👇",
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=main_menu()
+    )
 
 @dp.callback_query(F.data == "back_main")
 async def back_main(callback: CallbackQuery):
-    await callback.message.edit_text("Выберите сервис:", reply_markup=main_menu())
+    await callback.message.edit_text("Выберите компанию 👇", reply_markup=main_menu())
 
+# ОБРАБОТЧИК ПОДДЕРЖКИ
+@dp.callback_query(F.data == "support")
+async def support_handler(callback: CallbackQuery):
+    text = (
+        "🆘 *Служба поддержки*\n\n"
+        f"Если у вас возникли проблемы с оплатой или промокодом, пишите администратору: {SUPPORT_CONTACT}\n\n"
+        "График работы: 10:00 - 22:00 МСК"
+    )
+    await callback.message.edit_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=back_button())
+
+# ОБРАБОТЧИК АДМИН-ПАНЕЛИ
+@dp.callback_query(F.data == "admin_panel")
+async def admin_handler(callback: CallbackQuery):
+    if callback.from_user.id != ADMIN_ID:
+        await callback.answer("❌ У вас нет прав администратора!", show_alert=True)
+        return
+    
+    total_users = len(users_db)
+    total_sales = len(payments_db)
+    total_money = sum(p["amount"] for p in payments_db)
+    
+    text = (
+        "🔐 *Панель администратора*\n\n"
+        f"👥 Всего пользователей: {total_users}\n"
+        f"💰 Успешных продаж: {total_sales}\n"
+        f"💵 Общая выручка: {total_money} USDT"
+    )
+    
+    # Кнопки внутри админки
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📋 Список заказов", callback_data="admin_orders")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="back_main")]
+    ])
+    await callback.message.edit_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=kb)
+
+@dp.callback_query(F.data == "admin_orders")
+async def admin_orders(callback: CallbackQuery):
+    if not payments_db:
+        await callback.answer("Заказов пока нет", show_alert=True)
+        return
+    
+    report = "*Последние 10 заказов:*\n\n"
+    for p in payments_db[-10:]:
+        report += f"▫️ {p['date']} | @{p['username']} | {p['product']} | {p['amount']} USDT\n"
+    
+    await callback.message.edit_text(report, parse_mode=ParseMode.MARKDOWN, reply_markup=back_button())
+
+# Обработчик выбора сервиса (уже был, но проверь наличие)
 @dp.callback_query(F.data.startswith("service_"))
 async def show_products(callback: CallbackQuery):
-    s_map = {"whoosh": "Whoosh", "urent": "Юрент", "yandex_scooter": "Яндекс Самокат", "yandex_taxi": "Яндекс Такси"}
+    s_map = {
+        "whoosh": "Whoosh", 
+        "urent": "Юрент", 
+        "yandex_scooter": "Яндекс Самокат", 
+        "yandex_taxi": "Яндекс Такси"
+    }
     key = callback.data.split("_", 1)[1]
     name = s_map.get(key, "Сервис")
-    await callback.message.edit_text(f"🎫 *{name}*\nВыберите товар:", parse_mode=ParseMode.MARKDOWN, reply_markup=products_menu(name))
-
-@dp.callback_query(F.data.startswith("buy_"))
-async def buy_product(callback: CallbackQuery):
-    p_key = callback.data.replace("buy_", "")
-    product = PRODUCTS.get(p_key)
-    if not product:
-        await callback.answer("❌ Товар не найден", show_alert=True)
-        return
-    
-    url, inv_id = await create_crypto_invoice(product["price"], p_key, callback.from_user.id)
-    if not url:
-        await callback.message.answer("❌ Ошибка платежки. Проверьте токены на Render!")
-        return
-    
-    user_data[callback.from_user.id] = {"invoice_id": inv_id, "product": product}
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔗 Оплатить", url=url)],
-        [InlineKeyboardButton(text="✅ Я ОПЛАТИЛ", callback_data=f"check_{p_key}")]
-    ])
-    await callback.message.edit_text(f"🛒 *{product['name']}*\nЦена: {product['price']} USDT", parse_mode=ParseMode.MARKDOWN, reply_markup=kb)
-
-@dp.callback_query(F.data.startswith("check_"))
-async def check_payment(callback: CallbackQuery):
-    uid = callback.from_user.id
-    data = user_data.get(uid)
-    if not data:
-        await callback.answer("❌ Сессия истекла", show_alert=True)
-        return
-    
-    status = await check_invoice_status(data["invoice_id"])
-    if status == "paid":
-        p = data["product"]
-        await callback.message.edit_text(f"✅ Оплачено!\nВаш код для {p['service']}:\n`{p['code']}`", parse_mode=ParseMode.MARKDOWN, reply_markup=back_button())
-        await bot.send_message(ADMIN_ID, f"💰 Продажа: {p['name']} (@{callback.from_user.username})")
-        del user_data[uid]
-    else:
-        await callback.answer("⏳ Оплата не найдена", show_alert=True)
-
-@dp.callback_query(F.data == "admin_panel")
-async def admin(callback: CallbackQuery):
-    if callback.from_user.id == ADMIN_ID:
-        await callback.answer(f"Админ-стата: {len(users_db)} юзеров", show_alert=True)
+    await callback.message.edit_text(
+        f"🎫 *Вы выбрали {name}*\nВыберите нужный промокод:", 
+        parse_mode=ParseMode.MARKDOWN, 
+        reply_markup=products_menu(name)
+    )
 
 # ========== ВЕБ-СЕРВЕР ДЛЯ RENDER ==========
 async def handle(request):
